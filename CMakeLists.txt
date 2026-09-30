@@ -24,6 +24,8 @@ set(CORE_SOURCES
     src/watchdog.cpp
     src/fault_manager.cpp
     src/transport.cpp
+    src/uart_transport.cpp
+    src/hardware_items.cpp
     src/logger.cpp
     src/telemetry.cpp
     src/tcp_server.cpp
@@ -63,6 +65,7 @@ add_executable(run_tests
     tests/test_protocol.cpp
     tests/test_controller.cpp
     tests/test_fault_manager.cpp
+    tests/test_hardware.cpp
 )
 target_link_libraries(run_tests PRIVATE industrial_core)
 

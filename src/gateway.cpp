@@ -3,6 +3,7 @@
 #include "modbus_server.hpp"
 #include "mqtt_client.hpp"
 #include "logger.hpp"
+#include "hardware_items.hpp"
 #include <fstream>
 #include <sstream>
 #include <iomanip>
@@ -302,6 +303,13 @@ void LinuxGateway::control_loop_thread() {
         }
 
         controller_.evaluate(readings, staleness, watchdog_.is_healthy(), mcu_connected_.load());
+
+        // Update Simulated Physical Hardware Registers & GPIO Lines
+        float t = readings.count(SensorId::TEMPERATURE) ? readings[SensorId::TEMPERATURE].filtered_value : 25.0f;
+        float c = readings.count(SensorId::CURRENT) ? readings[SensorId::CURRENT].filtered_value : 0.0f;
+        float v = readings.count(SensorId::VIBRATION) ? readings[SensorId::VIBRATION].filtered_value : 0.0f;
+        float r = readings.count(SensorId::RPM) ? readings[SensorId::RPM].filtered_value : 0.0f;
+        HardwareModel::instance().update_from_sensors(t, c, v, r, controller_.get_state(), watchdog_.is_healthy());
 
         next_deadline += period;
         auto now = steady_clock::now();

@@ -1,6 +1,7 @@
 #include "tcp_server.hpp"
 #include "gateway.hpp"
 #include "logger.hpp"
+#include "hardware_items.hpp"
 #include <iostream>
 #include <sstream>
 #include <iomanip>
@@ -106,8 +107,8 @@ void CliMonitorServer::handle_client(socket_t client_sock) {
     std::string banner =
         "\r\n=======================================================\r\n"
         " Industrial Edge Controller CLI Monitor (Digital Twin)\r\n"
-        " Commands: STATUS, SENSORS, FAULTS, ACTUATOR, WATCHDOG,\r\n"
-        "           JSON, START, STOP, RESET, ESTOP, HELP, QUIT\r\n"
+        " Commands: STATUS, SENSORS, HARDWARE, GPIO, FAULTS, ACTUATOR,\r\n"
+        "           WATCHDOG, JSON, START, STOP, RESET, ESTOP, QUIT\r\n"
         "=======================================================\r\n\r\n> ";
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -240,6 +241,23 @@ std::string CliMonitorServer::process_command(const std::string& raw_cmd) {
             << "TIMEOUT SETTING: " << gateway_.get_config().watchdog_timeout_ms << " ms\r\n";
         return oss.str();
     }
+    else if (cmd == "HARDWARE" || cmd == "LSDEV") {
+        return HardwareModel::instance().get_topology_tree();
+    }
+    else if (cmd == "GPIO") {
+        auto gpios = HardwareModel::instance().get_all_gpio();
+        std::ostringstream oss;
+        oss << "\r\nPIN  NAME                  DIR  STATE  DESCRIPTION\r\n"
+            << "---------------------------------------------------------------------------\r\n";
+        for (const auto& g : gpios) {
+            oss << " " << std::setw(3) << static_cast<int>(g.pin_number) << " "
+                << std::setw(21) << std::left << g.name << " "
+                << std::setw(4) << g.direction << " "
+                << std::setw(6) << (g.state ? "HIGH" : "LOW") << " "
+                << g.description << "\r\n";
+        }
+        return oss.str();
+    }
     else if (cmd == "JSON") {
         return "\r\n" + gateway_.get_current_telemetry().to_json() + "\r\n";
     }
@@ -250,6 +268,8 @@ std::string CliMonitorServer::process_command(const std::string& raw_cmd) {
         return "\r\nAvailable Commands:\r\n"
                "  STATUS   - Complete device and sensor summary\r\n"
                "  SENSORS  - Detailed virtual sensor telemetry\r\n"
+               "  HARDWARE - Virtual IC register topology (TMP117, INA219, MPU6050, ENCODER)\r\n"
+               "  GPIO     - Virtual GPIO Port A state (PWM enable, ESTOP trip relay, beacon)\r\n"
                "  FAULTS   - List active faults and alarms\r\n"
                "  ACTUATOR - Actuator state and trip diagnostics\r\n"
                "  START    - Start simulated actuator\r\n"
