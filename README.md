@@ -217,12 +217,31 @@ The gateway hosts a standard Modbus TCP server on port `1502` (Slave Unit ID `1`
 
 ## 9. Interactive Tools & Diagnostics
 
-### 1. Web SCADA Dashboard
+### 1. Web SCADA Dashboard & Real-Time 3D Digital Twin
 Open your web browser and navigate to:
 **`http://localhost:8080`**
-Features live gauges, actuator state indicators, real-time event logs, and one-click fault injection buttons.
+Features:
+- **WebGL 3D Digital Twin (Three.js):** Real-time 3D rendered AC induction motor with dynamic rotor rotation matching live encoder RPM, thermal heat-map shifting across stator windings, and vertex vibration displacement.
+- **Photorealistic 3D CAD Renders:** Toggleable view of physical DIN-rail edge controller enclosure and industrial motor assembly.
+- **Telemetry Gauges & Interlocks:** Live gauges for TMP117 temperature, INA219 current, MPU-6050 vibration, and optical encoder RPM with one-click fault injection controls.
 
-### 2. CLI TCP Monitoring Interface (Port 9100)
+### 2. Interactive Linux Virtual Hardware Lab (`tools/hardware_lab.py`)
+An interactive embedded Linux CLI debugger mimicking access to `/sys/kernel/debug` and hardware buses:
+```bash
+# Launch interactive terminal shell:
+python tools/hardware_lab.py
+
+# Commands supported inside shell:
+root@industrial-edge:/sys/kernel/debug# lsdev      # Probe I2C-1, Timer-2, and GPIO buses
+root@industrial-edge:/sys/kernel/debug# status     # Telemetry and state machine summary
+root@industrial-edge:/sys/kernel/debug# gpio       # Inspect virtual GPIO Bank A & relay interlocks
+root@industrial-edge:/sys/kernel/debug# sniff      # Live binary packet sniffer decoding CRC-32 frames
+root@industrial-edge:/sys/kernel/debug# faults     # View active safety trips and alarms
+root@industrial-edge:/sys/kernel/debug# inject temperature-high  # Inject over-temp fault
+root@industrial-edge:/sys/kernel/debug# dmesg      # Print driver diagnostic ring buffer
+```
+
+### 3. CLI TCP Monitoring Interface (Port 9100)
 Connect interactively using Netcat or the included Python tool:
 ```bash
 # Interactive netcat session:
@@ -231,11 +250,13 @@ nc localhost 9100
 # Or via Python monitor tool:
 python tools/tcp_monitor.py --cmd STATUS
 python tools/tcp_monitor.py --cmd SENSORS
+python tools/tcp_monitor.py --cmd HARDWARE
+python tools/tcp_monitor.py --cmd GPIO
 python tools/tcp_monitor.py --cmd FAULTS
 python tools/tcp_monitor.py --cmd JSON
 ```
 
-### 3. Modbus TCP Client
+### 4. Modbus TCP Client
 Query industrial holding registers:
 ```bash
 # Single query:
@@ -245,7 +266,7 @@ python tools/modbus_client.py --port 1502
 python tools/modbus_client.py --port 1502 --loop
 ```
 
-### 4. Fault Injection Engine
+### 5. Fault Injection Engine
 Inject real-time dynamic hardware and transport faults without code changes:
 ```bash
 # Inject over-temperature condition (forces 92.5°C -> triggers EMERGENCY_STOP):
@@ -267,7 +288,7 @@ python tools/fault_injector.py --sensor-timeout
 python tools/fault_injector.py --reset
 ```
 
-### 5. MQTT Telemetry Stream
+### 6. MQTT Telemetry Stream
 ```bash
 python tools/mqtt_monitor.py --topic "industrial/device01/#"
 ```

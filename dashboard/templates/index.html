@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Industrial Edge Controller - Digital Twin Dashboard</title>
     <link rel="stylesheet" href="/static/style.css">
+    <!-- Three.js for Interactive 3D WebGL Digital Twin -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
     <div class="simulation-banner">
@@ -14,7 +16,7 @@
     <header class="header">
         <div class="header-title">
             <h1>Industrial Edge Controller & Digital Twin</h1>
-            <span class="device-tag">NODE: <strong id="val-device">device01</strong></span>
+            <span class="device-tag">NODE: <strong id="val-device">device01</strong> | ARCH: Linux Edge Gateway (C++17)</span>
         </div>
         <div class="header-status">
             <span class="pill" id="badge-mcu">MCU: DISCONNECTED</span>
@@ -24,11 +26,48 @@
     </header>
 
     <main class="container">
+        <!-- Live 3D Digital Twin Visualizer -->
+        <section class="card viewport-card">
+            <div class="card-header">
+                <h3>Live 3D Hardware Digital Twin & Photorealistic CAD Models</h3>
+                <div class="view-toggle">
+                    <button class="btn btn-blue" id="btn-view-3d" onclick="switchVisualView('3d')">Interactive 3D WebGL</button>
+                    <button class="btn btn-gray" id="btn-view-cad" onclick="switchVisualView('cad')">3D CAD Renders</button>
+                </div>
+            </div>
+            
+            <div id="threejs-container" class="threejs-container">
+                <div class="canvas-overlay">
+                    <div class="hud-item">ROTOR SPEED: <span id="hud-rpm" class="hud-val">0 RPM</span></div>
+                    <div class="hud-item">STATOR TEMP: <span id="hud-temp" class="hud-val">--.- °C</span></div>
+                    <div class="hud-item">VIBRATION RMS: <span id="hud-vibe" class="hud-val">0.00 mm/s</span></div>
+                    <div class="hud-hint">🖱️ Left-Click + Drag: Rotate 3D Model | Scroll: Zoom</div>
+                </div>
+            </div>
+
+            <div id="cad-renders-container" class="cad-renders-container" style="display: none;">
+                <div class="cad-grid">
+                    <div class="cad-card">
+                        <img src="/static/industrial_motor_3d.jpg" alt="Industrial AC Induction Motor 3D Digital Twin" class="cad-img">
+                        <div class="cad-caption">
+                            <strong>Figure 1:</strong> 3-Phase AC Induction Motor Digital Twin with Optical Quadrature Shaft Encoder, Piezoelectric Accelerometer, and Thermal RTD Sensor Probes.
+                        </div>
+                    </div>
+                    <div class="cad-card">
+                        <img src="/static/edge_controller_3d.jpg" alt="Industrial Linux Edge Controller 3D Model" class="cad-img">
+                        <div class="cad-caption">
+                            <strong>Figure 2:</strong> Linux Edge Controller (EDGE-LINX 5000) on DIN Rail with Dual Gigabit Ethernet, Isolated RS-485 Terminal Blocks, and Diagnostic LEDs.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- Telemetry Cards -->
         <section class="grid-4">
             <div class="card" id="card-temp">
                 <div class="card-header">
-                    <h3>Temperature</h3>
+                    <h3>Temperature (TMP117)</h3>
                     <span class="unit">°C</span>
                 </div>
                 <div class="card-value" id="val-temp">--.-</div>
@@ -40,7 +79,7 @@
 
             <div class="card" id="card-current">
                 <div class="card-header">
-                    <h3>Motor Current</h3>
+                    <h3>Motor Current (INA219)</h3>
                     <span class="unit">A</span>
                 </div>
                 <div class="card-value" id="val-current">--.-</div>
@@ -52,7 +91,7 @@
 
             <div class="card" id="card-vibe">
                 <div class="card-header">
-                    <h3>Vibration</h3>
+                    <h3>Vibration (MPU-6050)</h3>
                     <span class="unit">mm/s</span>
                 </div>
                 <div class="card-value" id="val-vibe">--.-</div>
@@ -64,7 +103,7 @@
 
             <div class="card" id="card-rpm">
                 <div class="card-header">
-                    <h3>Motor Speed</h3>
+                    <h3>Motor Speed (Encoder)</h3>
                     <span class="unit">RPM</span>
                 </div>
                 <div class="card-value" id="val-rpm">----</div>

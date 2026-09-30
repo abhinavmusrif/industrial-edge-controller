@@ -99,9 +99,34 @@ The Linux Edge Gateway avoids global mutable state and uncontrolled thread creat
 
 ---
 
-## 4. Hardware Replacement Architecture
+## 4. Hardware Emulation & Integrated Circuits Model
 
-In production embedded environments, physical sensors and microcontrollers communicate via fieldbuses rather than localhost TCP. The code is architected to facilitate this migration:
+To bridge the gap between pure data simulation and physical embedded hardware, the system includes a high-fidelity **Virtual Hardware Registry (`HardwareModel`)** modeling real off-the-shelf industrial components:
+
+1. **TMP117AIDRVR (Texas Instruments - I2C Address `0x48`):**
+   - High-precision ±0.1°C temperature sensor with 16-bit ADC.
+   - Registers: `TEMP_RESULT` (`0x00`, 7.8125 m°C/LSB), `CONFIG` (`0x01`), `THIGH_LIMIT` (`0x02`), `TLOW_LIMIT` (`0x03`).
+2. **INA219BIDR (Texas Instruments - I2C Address `0x40`):**
+   - Bi-directional current shunt and power monitor.
+   - Registers: `CONFIG` (`0x00`), `SHUNT_VOLTAGE` (`0x01`, 10 µV/LSB), `BUS_VOLTAGE` (`0x02`, 4 mV/LSB = 24.0V), `CURRENT_RAW` (`0x04`, 10 mA/LSB).
+3. **MPU-6050 (InvenSense - I2C Address `0x68`):**
+   - Triple-axis MEMS accelerometer with onboard Digital Motion Processor.
+   - Registers: `ACCEL_X/Y/Z` (`0x3B-0x3F`), `VIBE_RMS` (`0x41`, 10 µm/s / LSB), `WHO_AM_I` (`0x75` = `0x68`).
+4. **TIM-2 Optical Shaft Quadrature Encoder:**
+   - 32-bit hardware timer counter coupled to motor shaft.
+   - Registers: `TIM_CNT` (`0x00`), `SPEED_RPM` (`0x04`), `TIM_ARR` (`0x08`).
+5. **Virtual GPIO Bank A (Physical Safety Interlocks):**
+   - `PIN 0`: `MOTOR_PWM_ENABLE` (Gate drive line - killed on fault)
+   - `PIN 1`: `ESTOP_RELAY_TRIP` (Contactor relay - trips OPEN on fault)
+   - `PIN 2`: `WATCHDOG_WDI` (Hardware watchdog heartbeat toggle)
+   - `PIN 3`: `OPERATOR_RESET_PB` (Pushbutton reset interlock)
+   - `PIN 4`: `WARNING_BEACON_LED` (Control cabinet yellow warning tower)
+
+---
+
+## 5. Drop-in Physical Hardware Transports
+
+The transport abstraction layer (`ITransport`) decouples the protocol, CRC validation, and control logic from the physical medium:
 
 ```cpp
 class ITransport {
@@ -116,9 +141,20 @@ public:
 };
 ```
 
-To deploy with real hardware:
-1. **RS-485 / Serial UART:** Implement `UartTransport : public ITransport` using POSIX `open("/dev/ttyUSB0", O_RDWR | O_NOCTTY)` and `tcsetattr()`.
-2. **CAN Bus:** Implement `CanTransport : public ITransport` using Linux `SocketCAN` (`AF_CAN`, `CAN_RAW`).
-3. **Firmware:** Compile the sensor sampling logic and `Protocol::serialize_frame()` onto an STM32, ESP32, or NXP i.MX RT microcontroller.
+1. **`TcpTransport`:** Implements virtual localhost link on port `9000` for simulation, testing, and CI/CD pipelines.
+2. **`UartTransport`:** Fully implemented drop-in production serial driver supporting POSIX `termios` (`/dev/ttyUSB0`, `/dev/ttyS0`, `/dev/pts/X`) and Windows COM ports (`\\\\.\\COM1-COM256`) with configurable baud rates (9600 to 230400), 8N1 framing, and non-blocking poll timeouts.
+3. **`CanTransport`:** Extensible for Linux SocketCAN (`AF_CAN`, `CAN_RAW`).
 
-The higher-level gateway code, control loop, Modbus server, and telemetry pipelines remain 100% untouched.
+---
+
+## 6. Interactive Linux Virtual Hardware Lab & 3D Digital Twin
+
+1. **Linux Hardware Lab (`tools/hardware_lab.py`):**
+   - An interactive embedded Linux shell (`root@industrial-edge:/sys/kernel/debug# `)
+   - Commands: `lsdev` (probe I2C/Timer/GPIO topology), `status`, `sensors`, `gpio`, `faults`, `inject`, `sniff` (live binary frame packet sniffer decoding IEEE 802.3 CRC-32 on the wire), and `dmesg`.
+2. **Three.js 3D WebGL Digital Twin:**
+   - Real-time 3D rendered AC induction motor with dynamic rotor rotation matched to live encoder RPM.
+   - Dynamic stator heat-map shifting from cold blue (`35°C`) to nominal green (`55°C`), warning yellow (`75°C`), and critical red (`85°C+`).
+   - High-frequency displacement vertex shaking mimicking live accelerometer vibration.
+   - DIN-rail Edge Controller with live pulsing watchdog, MCU link, and fault beacon LEDs.
+
