@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Industrial Edge Controller - Digital Twin Dashboard</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="simulation-banner">
+        ⚠️ SOFTWARE DIGITAL TWIN SIMULATION — NO PHYSICAL HARDWARE CONNECTED ⚠️
+    </div>
+
+    <header class="header">
+        <div class="header-title">
+            <h1>Industrial Edge Controller & Digital Twin</h1>
+            <span class="device-tag">NODE: <strong id="val-device">device01</strong></span>
+        </div>
+        <div class="header-status">
+            <span class="pill" id="badge-mcu">MCU: DISCONNECTED</span>
+            <span class="pill" id="badge-watchdog">WATCHDOG: UNKNOWN</span>
+            <span class="pill pill-large" id="badge-state">OFF</span>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Telemetry Cards -->
+        <section class="grid-4">
+            <div class="card" id="card-temp">
+                <div class="card-header">
+                    <h3>Temperature</h3>
+                    <span class="unit">°C</span>
+                </div>
+                <div class="card-value" id="val-temp">--.-</div>
+                <div class="progress-bar-bg">
+                    <div class="progress-bar-fill" id="bar-temp" style="width: 0%"></div>
+                </div>
+                <div class="card-limits">Nominal: 35-70 | Crit: &gt;85°C</div>
+            </div>
+
+            <div class="card" id="card-current">
+                <div class="card-header">
+                    <h3>Motor Current</h3>
+                    <span class="unit">A</span>
+                </div>
+                <div class="card-value" id="val-current">--.-</div>
+                <div class="progress-bar-bg">
+                    <div class="progress-bar-fill" id="bar-current" style="width: 0%"></div>
+                </div>
+                <div class="card-limits">Nominal: 2-10 | Crit: &gt;15A</div>
+            </div>
+
+            <div class="card" id="card-vibe">
+                <div class="card-header">
+                    <h3>Vibration</h3>
+                    <span class="unit">mm/s</span>
+                </div>
+                <div class="card-value" id="val-vibe">--.-</div>
+                <div class="progress-bar-bg">
+                    <div class="progress-bar-fill" id="bar-vibe" style="width: 0%"></div>
+                </div>
+                <div class="card-limits">Nominal: 0-4 | Crit: &gt;7 mm/s</div>
+            </div>
+
+            <div class="card" id="card-rpm">
+                <div class="card-header">
+                    <h3>Motor Speed</h3>
+                    <span class="unit">RPM</span>
+                </div>
+                <div class="card-value" id="val-rpm">----</div>
+                <div class="progress-bar-bg">
+                    <div class="progress-bar-fill" id="bar-rpm" style="width: 0%"></div>
+                </div>
+                <div class="card-limits">Range: 0 - 3600 RPM</div>
+            </div>
+        </section>
+
+        <!-- System Diagnostics & Fault Manager -->
+        <section class="grid-2">
+            <div class="card diagnostics-card">
+                <h3>System & Actuator Diagnostics</h3>
+                <table class="diag-table">
+                    <tr><td>Controller State:</td><td><strong id="diag-state">--</strong></td></tr>
+                    <tr><td>Last Trip Reason:</td><td id="diag-trip">None</td></tr>
+                    <tr><td>Watchdog Elapsed:</td><td id="diag-wd-time">0 ms</td></tr>
+                    <tr><td>Last Heartbeat:</td><td id="diag-timestamp">--:--:--</td></tr>
+                </table>
+
+                <div class="control-actions">
+                    <h4>Actuator Commands</h4>
+                    <button class="btn btn-green" onclick="sendActuatorCmd('START')">Start Motor</button>
+                    <button class="btn btn-gray" onclick="sendActuatorCmd('STOP')">Stop Motor</button>
+                    <button class="btn btn-blue" onclick="sendActuatorCmd('RESET')">Reset Trip</button>
+                    <button class="btn btn-red" onclick="sendActuatorCmd('ESTOP')">EMERGENCY STOP</button>
+                </div>
+            </div>
+
+            <div class="card fault-card">
+                <h3>Active Faults & Alarms</h3>
+                <div id="fault-list" class="fault-list">
+                    <div class="fault-item fault-none">No active faults. All parameters nominal.</div>
+                </div>
+
+                <div class="fault-injection-panel">
+                    <h4>Live Fault Injection</h4>
+                    <div class="fault-buttons">
+                        <button class="btn btn-warn" onclick="injectFault('TEMP_HIGH')">High Temp (92.5°C)</button>
+                        <button class="btn btn-warn" onclick="injectFault('CURRENT_HIGH')">High Current (16.8A)</button>
+                        <button class="btn btn-warn" onclick="injectFault('VIBE_HIGH')">High Vibration (8.4mm/s)</button>
+                        <button class="btn btn-warn" onclick="injectFault('BAD_CRC')">Bad CRC-32</button>
+                        <button class="btn btn-warn" onclick="injectFault('PAUSE')">Watchdog Timeout (Pause 4s)</button>
+                        <button class="btn btn-green" onclick="injectFault('RESET')">Clear Injected Faults</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
