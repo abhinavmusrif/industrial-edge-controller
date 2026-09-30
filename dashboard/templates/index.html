@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Industrial Edge Controller - Digital Twin Dashboard</title>
+    <title>Industrial Edge Controller & Digital Twin</title>
     <link rel="stylesheet" href="/static/style.css">
     <!-- Three.js for Interactive 3D WebGL Digital Twin -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -16,7 +16,7 @@
     <header class="header">
         <div class="header-title">
             <h1>Industrial Edge Controller & Digital Twin</h1>
-            <span class="device-tag">NODE: <strong id="val-device">device01</strong> | ARCH: Linux Edge Gateway (C++17)</span>
+            <span class="device-tag">NODE: <strong id="val-device">device01</strong> | OS: Embedded Linux (PREEMPT_RT) | ARCH: Linux Edge Gateway (C++17)</span>
         </div>
         <div class="header-status">
             <span class="pill" id="badge-mcu">MCU: DISCONNECTED</span>
@@ -29,7 +29,10 @@
         <!-- Live 3D Digital Twin Visualizer -->
         <section class="card viewport-card">
             <div class="card-header">
-                <h3>Live 3D Hardware Digital Twin & Photorealistic CAD Models</h3>
+                <div class="title-with-badge">
+                    <h3>Live 3D Hardware Digital Twin & CAD Models</h3>
+                    <span class="badge-live">● REAL-TIME DYNAMICS</span>
+                </div>
                 <div class="view-toggle">
                     <button class="btn btn-blue" id="btn-view-3d" onclick="switchVisualView('3d')">Interactive 3D WebGL</button>
                     <button class="btn btn-gray" id="btn-view-cad" onclick="switchVisualView('cad')">3D CAD Renders</button>
@@ -37,11 +40,23 @@
             </div>
             
             <div id="threejs-container" class="threejs-container">
+                <!-- 3D Camera & Control Toolbar -->
+                <div class="camera-toolbar">
+                    <span class="toolbar-label">CAMERA:</span>
+                    <button class="tool-btn active" onclick="setCameraView('overview')">Overview</button>
+                    <button class="tool-btn" onclick="setCameraView('motor')">Motor Stator</button>
+                    <button class="tool-btn" onclick="setCameraView('encoder')">Shaft & Encoder</button>
+                    <button class="tool-btn" onclick="setCameraView('controller')">Edge Gateway</button>
+                    <button class="tool-btn" onclick="toggleWireframe()">Wireframe</button>
+                    <button class="tool-btn" onclick="toggleAutoRotate()">Auto-Rotate</button>
+                </div>
+
                 <div class="canvas-overlay">
                     <div class="hud-item">ROTOR SPEED: <span id="hud-rpm" class="hud-val">0 RPM</span></div>
                     <div class="hud-item">STATOR TEMP: <span id="hud-temp" class="hud-val">--.- °C</span></div>
+                    <div class="hud-item">MOTOR CURRENT: <span id="hud-curr" class="hud-val">0.00 A</span></div>
                     <div class="hud-item">VIBRATION RMS: <span id="hud-vibe" class="hud-val">0.00 mm/s</span></div>
-                    <div class="hud-hint">🖱️ Left-Click + Drag: Rotate 3D Model | Scroll: Zoom</div>
+                    <div class="hud-hint">🖱️ Left-Click + Drag: Rotate 360° | Scroll: Zoom | Right-Click: Pan</div>
                 </div>
             </div>
 
@@ -63,70 +78,134 @@
             </div>
         </section>
 
-        <!-- Telemetry Cards -->
+        <!-- Embedded Linux Terminal & Virtual Hardware Bus Lab -->
+        <section class="card terminal-card">
+            <div class="terminal-header">
+                <div class="terminal-dots">
+                    <span class="dot dot-red"></span>
+                    <span class="dot dot-yellow"></span>
+                    <span class="dot dot-green"></span>
+                    <span class="terminal-title">root@industrial-edge-gateway: ~ (tty1 — Embedded Linux Hardware Shell)</span>
+                </div>
+                <div class="terminal-tabs">
+                    <button class="term-tab active" id="tab-term-cli" onclick="switchTermTab('cli')">Linux Terminal Shell</button>
+                    <button class="term-tab" id="tab-term-hw" onclick="switchTermTab('hw')">Virtual IC Register Map</button>
+                </div>
+            </div>
+
+            <!-- TAB 1: Real Interactive Terminal Shell -->
+            <div id="term-view-cli" class="term-view">
+                <div class="quick-commands-bar">
+                    <span class="quick-label">⚡ QUICK RUN:</span>
+                    <button class="chip-btn" onclick="runQuickCmd('i2cdetect -y 1')">i2cdetect -y 1</button>
+                    <button class="chip-btn" onclick="runQuickCmd('cat /sys/class/hwmon/hwmon0/temp1_input')">cat temp1_input</button>
+                    <button class="chip-btn" onclick="runQuickCmd('cat /sys/class/hwmon/hwmon1/curr1_input')">cat curr1_input</button>
+                    <button class="chip-btn" onclick="runQuickCmd('gpioget 0')">gpioget 0</button>
+                    <button class="chip-btn" onclick="runQuickCmd('tcpdump -i lo port 9000 -X')">tcpdump -X</button>
+                    <button class="chip-btn" onclick="runQuickCmd('modbus-cli')">modbus-cli</button>
+                    <button class="chip-btn" onclick="runQuickCmd('systemctl status')">systemctl status</button>
+                    <button class="chip-btn" onclick="runQuickCmd('top')">top</button>
+                    <button class="chip-btn" onclick="runQuickCmd('dmesg | tail')">dmesg</button>
+                    <button class="chip-btn" onclick="runQuickCmd('clear')">clear</button>
+                </div>
+                
+                <div id="terminal-screen" class="terminal-screen">
+                    <pre id="terminal-output">Welcome to Industrial Linux Edge Gateway (PREEMPT_RT 6.6.21-rt24-v8).
+Simulated I2C buses (TMP117, INA219, MPU-6050), Timer-2 Encoder, and GPIO Bank A are online.
+Type 'help' for available commands, or click any quick-run button above.
+</pre>
+                    <div class="terminal-input-line">
+                        <span id="terminal-prompt" class="terminal-prompt">root@industrial-edge:~# </span>
+                        <input type="text" id="terminal-input" class="terminal-input" autocomplete="off" spellcheck="false" placeholder="Type a command (e.g. i2cdetect -y 1, ls /sys/bus/i2c/devices/, top)...">
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: Hardware IC Register Tree & Interlocks -->
+            <div id="term-view-hw" class="term-view" style="display: none;">
+                <div id="hw-registry-container" class="hw-registry-grid">
+                    <!-- Populated dynamically via /api/hardware -->
+                    <div class="hw-loading">Loading hardware bus registry...</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Live Telemetry Gauges -->
         <section class="grid-4">
             <div class="card" id="card-temp">
                 <div class="card-header">
-                    <h3>Temperature (TMP117)</h3>
+                    <div class="title-with-chip">
+                        <h3>Temperature</h3>
+                        <span class="chip chip-sensor">TMP117 (0x48)</span>
+                    </div>
                     <span class="unit">°C</span>
                 </div>
                 <div class="card-value" id="val-temp">--.-</div>
                 <div class="progress-bar-bg">
                     <div class="progress-bar-fill" id="bar-temp" style="width: 0%"></div>
                 </div>
-                <div class="card-limits">Nominal: 35-70 | Crit: &gt;85°C</div>
+                <div class="card-limits">Nominal: 35-70 | Warning: 70-85 | Crit: &gt;85°C</div>
             </div>
 
             <div class="card" id="card-current">
                 <div class="card-header">
-                    <h3>Motor Current (INA219)</h3>
+                    <div class="title-with-chip">
+                        <h3>Motor Current</h3>
+                        <span class="chip chip-sensor">INA219 (0x40)</span>
+                    </div>
                     <span class="unit">A</span>
                 </div>
                 <div class="card-value" id="val-current">--.-</div>
                 <div class="progress-bar-bg">
                     <div class="progress-bar-fill" id="bar-current" style="width: 0%"></div>
                 </div>
-                <div class="card-limits">Nominal: 2-10 | Crit: &gt;15A</div>
+                <div class="card-limits">Nominal: 2-10 | Warning: 10-15 | Crit: &gt;15A</div>
             </div>
 
             <div class="card" id="card-vibe">
                 <div class="card-header">
-                    <h3>Vibration (MPU-6050)</h3>
+                    <div class="title-with-chip">
+                        <h3>Vibration RMS</h3>
+                        <span class="chip chip-sensor">MPU-6050 (0x68)</span>
+                    </div>
                     <span class="unit">mm/s</span>
                 </div>
                 <div class="card-value" id="val-vibe">--.-</div>
                 <div class="progress-bar-bg">
                     <div class="progress-bar-fill" id="bar-vibe" style="width: 0%"></div>
                 </div>
-                <div class="card-limits">Nominal: 0-4 | Crit: &gt;7 mm/s</div>
+                <div class="card-limits">Nominal: 0-4 | Warning: 4-7 | Crit: &gt;7 mm/s</div>
             </div>
 
             <div class="card" id="card-rpm">
                 <div class="card-header">
-                    <h3>Motor Speed (Encoder)</h3>
+                    <div class="title-with-chip">
+                        <h3>Shaft Speed</h3>
+                        <span class="chip chip-sensor">TIM2 Encoder</span>
+                    </div>
                     <span class="unit">RPM</span>
                 </div>
                 <div class="card-value" id="val-rpm">----</div>
                 <div class="progress-bar-bg">
                     <div class="progress-bar-fill" id="bar-rpm" style="width: 0%"></div>
                 </div>
-                <div class="card-limits">Range: 0 - 3600 RPM</div>
+                <div class="card-limits">Range: 0 - 3600 RPM | 2048 PPR</div>
             </div>
         </section>
 
-        <!-- System Diagnostics & Fault Manager -->
+        <!-- System Diagnostics, Actuator Commands, and Fault Injector -->
         <section class="grid-2">
             <div class="card diagnostics-card">
                 <h3>System & Actuator Diagnostics</h3>
                 <table class="diag-table">
-                    <tr><td>Controller State:</td><td><strong id="diag-state">--</strong></td></tr>
-                    <tr><td>Last Trip Reason:</td><td id="diag-trip">None</td></tr>
+                    <tr><td>Actuator State:</td><td><strong id="diag-state">--</strong></td></tr>
+                    <tr><td>Trip Reason:</td><td id="diag-trip">None</td></tr>
                     <tr><td>Watchdog Elapsed:</td><td id="diag-wd-time">0 ms</td></tr>
                     <tr><td>Last Heartbeat:</td><td id="diag-timestamp">--:--:--</td></tr>
                 </table>
 
                 <div class="control-actions">
-                    <h4>Actuator Commands</h4>
+                    <h4>Actuator Drive Controls</h4>
                     <button class="btn btn-green" onclick="sendActuatorCmd('START')">Start Motor</button>
                     <button class="btn btn-gray" onclick="sendActuatorCmd('STOP')">Stop Motor</button>
                     <button class="btn btn-blue" onclick="sendActuatorCmd('RESET')">Reset Trip</button>
@@ -141,12 +220,12 @@
                 </div>
 
                 <div class="fault-injection-panel">
-                    <h4>Live Fault Injection</h4>
+                    <h4>Real-Time Fault Injection Engine</h4>
                     <div class="fault-buttons">
                         <button class="btn btn-warn" onclick="injectFault('TEMP_HIGH')">High Temp (92.5°C)</button>
                         <button class="btn btn-warn" onclick="injectFault('CURRENT_HIGH')">High Current (16.8A)</button>
                         <button class="btn btn-warn" onclick="injectFault('VIBE_HIGH')">High Vibration (8.4mm/s)</button>
-                        <button class="btn btn-warn" onclick="injectFault('BAD_CRC')">Bad CRC-32</button>
+                        <button class="btn btn-warn" onclick="injectFault('BAD_CRC')">Bad CRC-32 Frame</button>
                         <button class="btn btn-warn" onclick="injectFault('PAUSE')">Watchdog Timeout (Pause 4s)</button>
                         <button class="btn btn-green" onclick="injectFault('RESET')">Clear Injected Faults</button>
                     </div>
